@@ -1,0 +1,462 @@
+OE 总结
+功能：用户上传excel，系统按照业务逻辑处理excel文件，结果文件返回给用户
+
+非常感谢mrshelly帮助，已完成功能主线，总结如下，有问题请大家多多指点
+
+1.上传文件在_columns里面使用fields.binary实现
+'excel': fields.binary('File', filters='*.xls'),
+
+2.在form view中使用button调用py中的方法，name属性对应方法名称
+<button name="import_file" string="上传" type="object"  class="oe_highlight" />
+
+3.在py的import_file方法中获取上传的excel文件
+this = self.browse(cr, uid, ids[0])
+data=base64.decodestring(this.excel)
+
+4.传递给xlrd,结合xlwt,xlutils进行自己的业务逻辑处理
+rb = open_workbook(file_contents=data, formatting_info=True, on_demand=True)
+wb = copy(rb)
+...
+s= StringIO.StringIO()
+wb.save(s)
+return s
+
+5.保存处理结果到库中
+out = base64.encodestring(s.getvalue())
+self.write(cr, uid, ids, {'excel': out,...}, context=context)
+
+6.返回到view中的指定视图
+obj_model = self.pool.get('ir.model.data')
+model_data_ids = obj_model.search(cr,uid,[('model','=','ir.ui.view'),('name','=','your_view_id')])
+resource_id = obj_model.read(cr, uid, model_data_ids, fields=['res_id'])[0]['res_id']
+return {
+            'type': 'ir.actions.act_window',
+            'res_model': 'your_model',
+            'view_mode': 'form',
+            'view_type': 'form',
+            'views': [(resource_id,'form')],
+            'res_id': this.id,
+            'target': 'new',
+        }
+
+7.在view中提供下载链接给用户
+<p>打开分析结果<field name="excel"  readonly="1" filename="name"/></p>
+
+
+安装Openoffice
+在openoffice中安装openerp report designer插件(openerp 7.0中自带)
+
+
+1.保存openoffice文件在英文路径下。如果不保存,send to server的时候会没有反应
+
+
+2. 主要类
+osv openerp/osv/osv.py
+在文件中 osv = Model
+所以osv.osv和osv.Model其实是一样的
+osv.Model定义在orm.py中
+
+report_sxw openerp/report/report_sxw.py
+logging python库自带
+import logging
+_logger = logging.getLogger(__name__)
+_logger.error("IntegrityError", exc_info=True)
+
+
+raise osv.except_osv('xinquanda_product', "_modify_quantity 0"%(record[0]['quantity']))
+
+3.使用openerp report design + openoffice 3.4 + openerp 7.0
+在send to server的时候会提示UnicodeDecodeError: 'ascii' codec can't decode byte
+通过在addons\base_report_designer\base_report_designer.py添加如下三行代码解决
+注意默认使用空格缩进。如果增加的代码使用tab缩进会产生unexpected indent错误
+import sys
+
+
+def upload_report(self, cr, uid, report_id, file_sxw, file_type, context=None):
+'''
+Untested function
+'''
+reload(sys)
+sys.setdefaultencoding('utf8')
+
+4.python 一个 *.py就是一个package
+osv.osv就是osv.py文件内的osv对象
+
+5.使用parent_id的时候，使用toolbar产生问题
+
+
+6.selection里面使用中文内容，需要在前面增加u, 比如u'供货商'。否则插入的时候会判断出错
+
+
+7.使用7.0 form如果没有sheet和group，会不显示filed string
+
+
+8.使用openerp report designer自动生成rml会使用in作为object名。会导致在7.0下面无法解析。提示 cannot eval 'xxxx'之类的。修改名字解决问题
+
+
+9.Win7的字体安装直接拖进去是不行的。文件名会变成xxx_1 xxx_2这样(用cmd查看)。所以需要使用cmd的xcopy命令进行放置。否则会安装了新字体，但是还是乱码。使用xcopy进去以后，虽然图形界面看不到该字体安装成功了。但是重启oe之后可以解决乱码问题。如果还不行尝试重启一下系统吧。
+
+
+10.一个工程中存在相同的view_id导致了显示不出来同名menu
+
+
+11.
+View生成的时候调用的初始化函数
+def view_init(self, cr, uid, fields_list, context=None):
+
+使用菜单栏的导出功能，导出Field数据时调用
+def export_data(self, cr, uid, ids, fields_to_export, context=None):
+
+加载数据时调用，返回一个id list.代表需要加载的数据
+def load(self, cr, uid, fields, data, context=None):
+        """
+        Attempts to load the data matrix, and returns a list of ids (or
+        ``False`` if there was an error and no id could be generated) and a
+        list of messages.
+
+
+        The ids are those of the records created and saved (in database), in
+        the same order they were extracted from the file. They can be passed
+        directly to :meth:`~read`
+
+
+    #
+    # Overload this method if you need a window title which depends on the context
+    #
+    def view_header_get(self, cr, user, view_id=None, view_type='form', context=None):
+        return False
+
+
+// 获取名字，返回名字列表
+def name_get(self, cr, user, ids, context=None):
+
+// 根据参数进行名字查找.返回 (id, name)的tuple列表.相当于先用search进行搜索，然后再用name_get获取名字列表
+def name_search(self, cr, user, name='', args=None, operator='ilike', context=None, limit=100):
+
+
+// 仅仅使用name创建record
+def name_create(self, cr, uid, name, context=None):
+
+create
+read
+返回的是dict组成的list
+
+write
+unlink
+
+def search(cr, user, args, offset=0, limit=None, order=None, context=None, count=False):
+
+cr.execute
+cr.fetchall
+
+// 定义了
+def func_search(self, cr, uid, obj, name field, args, context):
+
+12. pgsql的备份与恢复
+pg_dump.exe -f d:/backup/1234.backup -F t -h 127.0.0.1 -p 5432 -U openerp -b Erp
+pg_restore.exe -F t -h 127.0.0.1 -p 5432 -U openerp -d tt d:/backup/1234.backup
+
+
+13.
+c:\>for /f "tokens=1-3 delims=- " %1 in ("%date%") do @echo %1%2%3
+c:\>for /f "tokens=1-3 delims=.: " %1 in ("%time%") do @echo %1%2%3
+http://www.jb51.net/article/30539.htm
+
+14.
+report name一样导致了report对应的model调用错误
+
+15.
+select 'cp' || right(cast(pow(10, 10) as varchar) || id, 10) as sn, customer_id as name, '付款' as operation, pay_value as value, date, note from xinquanda_customer_payment
+union
+select 'co' || right(cast(pow(10, 10) as varchar) || id, 10) as sn, customer_id as name, '退货' as operation, price_totle as value, date , '' as note from xinquanda_product_customer_out
+union
+select 'ci' || right(cast(pow(10, 10) as varchar) || id, 10) as sn, customer_id as name, '供货' as operation, price_totle as value, date , '' as note from xinquanda_product_customer_in;
+
+
+16.有关于view视图的创建与显示
+1.在.py的对象创建里面定义_auto = False
+2.所有_column都需要有readonly=True的属性
+3._sql设定视图创建sql语句或者在__init__(self, cr)函数里面创建具体视图
+
+如果调用视图的action使用了tree type进行显示，可能会在报错
+
+2013-06-19 01:36:24,151 2392 [1;31m[1;49mERROR[0m Erp openerp.osv.orm: read xinquanda.funds.supplier:None
+None
+2013-06-19 01:36:24,154 2392 [1;31m[1;49mERROR[0m Erp openerp.osv.osv: Uncaught exception
+Traceback (most recent call last):
+ File "D:\programs\GreenOpenERP-7.0-20130428-232407\openerp\osv\osv.py", line 131, in wrapper
+return f(self, dbname, *args, **kwargs)
+ File "D:\programs\GreenOpenERP-7.0-20130428-232407\openerp\osv\osv.py", line 197, in execute
+res = self.execute_cr(cr, uid, obj, method, *args, **kw)
+ File "D:\programs\GreenOpenERP-7.0-20130428-232407\openerp\osv\osv.py", line 185, in execute_cr
+return getattr(object, method)(cr, uid, *args, **kw)
+ File "D:\programs\GreenOpenERP-7.0-20130428-232407\openerp\osv\orm.py", line 3606, in read
+select = map(lambda x: isinstance(x, dict) and x['id'] or x, select)
+TypeError: argument 2 to map() must support iteration
+2013-06-19 01:36:24,180 2392 [1;31m[1;49mERROR[0m Erp openerp.netsvc: argument 2 to map() must support iteration
+Traceback (most recent call last):
+ File "D:\programs\GreenOpenERP-7.0-20130428-232407\openerp\netsvc.py", line 296, in dispatch_rpc
+result = ExportService.getService(service_name).dispatch(method, params)
+ File "D:\programs\GreenOpenERP-7.0-20130428-232407\openerp\service\web_services.py", line 626, in dispatch
+res = fn(db, uid, *params)
+ File "D:\programs\GreenOpenERP-7.0-20130428-232407\openerp\osv\osv.py", line 188, in execute_kw
+return self.execute(db, uid, obj, method, *args, **kw or {})
+ File "D:\programs\GreenOpenERP-7.0-20130428-232407\openerp\osv\osv.py", line 131, in wrapper
+return f(self, dbname, *args, **kwargs)
+ File "D:\programs\GreenOpenERP-7.0-20130428-232407\openerp\osv\osv.py", line 197, in execute
+res = self.execute_cr(cr, uid, obj, method, *args, **kw)
+ File "D:\programs\GreenOpenERP-7.0-20130428-232407\openerp\osv\osv.py", line 185, in execute_cr
+return getattr(object, method)(cr, uid, *args, **kw)
+ File "D:\programs\GreenOpenERP-7.0-20130428-232407\openerp\osv\orm.py", line 3606, in read
+select = map(lambda x: isinstance(x, dict) and x['id'] or x, select)
+TypeError: argument 2 to map() must support iteration
+
+
+17. 直接在view form的field里面写select属性，貌似不能直接实现查询功能。需要添加search view来自定义搜索
+a. 生成 search_view定义
+
+        <record id="xinquanda_product_customer_in_search" model="ir.ui.view">
+            <field name="name">xinquanda.product.customer.in.search</field>
+            <field name="model">xinquanda.product.customer.in</field>
+            <field name="arch" type="xml">
+<search string="进货">
+<field name="name" filter_domain="[('name','ilike',self),]"/>
+<field name="customer_id" filter_domain="[('customer_id','ilike',self),]"/>
+</search>
+            </field>
+        </record>
+b. 在action里面指定需要的 search_view_id
+
+        <record id="action_xinquanda_product_customer_in_form" model="ir.actions.act_window">
+            <field name="name">客户供货</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">xinquanda.product.customer.in</field>
+            <field name="view_type">form</field>
+            <field name="view_mode">tree,form</field>
+            <field name="view_id" ref="xinquanda_product_customer_in_tree"/>
+<field name="search_view_id" ref="xinquanda_product_customer_in_search"/>
+        </record>
+
+
+18. domain里面operator的集合
+operator must be a string with a valid comparison operator from this list: =, !=, >, >=, <, <=, like, ilike, in, not in, child_of, parent_left, parent_right The semantics of most of these operators are obvious. The child_of operator will look for records who are children or grand-children of a given record, according to the semantics of this model (i.e following the relationship field named by self._parent_name, by default parent_id.
+
+[('name', 'like', 'Behave')] =>
+name LIKE '%Behave%'
+
+
+[('name', 'ilike', 'Behave%')] =>
+name LIKE '%Behave%%'
+
+
+[('name', '=like', 'Behave')] =>
+name LIKE 'Behave' (no sense to use it like this)
+
+
+[('name', '=ilike', 'Behave%')] =>
+name LIKE 'Behave%' (with =ilike, we can control more finely the criteria)
+
+
+19. domain不能直接使用<, >等符号作为domain的operator。 这个不是openerp的问题，而是xml标准的问题
+>           开始标记  &gt;
+
+
+<           结束标记  &lt;
+
+
+"            引号        &quot;
+
+
+'             撇号       &apos;
+
+
+&          "&"符      &amp;
+
+20. 有name_get函数的列如果要实现查找，需要对应实现name_search函数
+def name_get(self, cr, uid, ids, context=None):
+if isinstance(ids, (list, tuple)) and not len(ids):
+return []
+if isinstance(ids, (long, int)):
+ids = [ids]
+reads = self.read(cr, uid, ids, ['name','parent_id'], context=context)
+res = []
+
+
+for record in reads:
+name = record['name']
+if record['parent_id'] and record['parent_id'][1] != u'所有货物':
+name = record['parent_id'][1]+'/'+name
+res.append((record['id'], name))
+return res
+
+
+def name_search(self, cr, user, name='', args=None, operator='ilike', context=None, limit=100):
+_logger = logging.getLogger(__name__)
+_logger.error("name_search name=%s args=%s operator=%s context=%s"%(name, args, operator, context), exc_info=True)
+
+if name == '':
+result = super(xinquanda_product_category, self).name_search(cr, user, name, args, operator, context, limit)
+_logger.error("1 name_search result=%s"%(result), exc_info=True)
+return result
+#去除父类名
+nameIndex = name.rfind('/')
+if nameIndex != -1:
+name = name[nameIndex+1:]
+
+_logger.error("2 name_search name=%s"%(name), exc_info=True)
+
+result = super(xinquanda_product_category, self).name_search(cr, user, name, args, operator, context, limit)
+_logger.error("2 name_search result=%s"%(result), exc_info=True)
+return result
+
+21. 统计功能的另一种实现
+直接修改search和read函数。而非通过数据库试图实现。
+class xinquanda_statistics_product_period(osv.osv):
+
+_name = 'xinquanda.statistics.product.period'
+_description = u'货物销售时间段统计'
+_auto = False
+
+_search_context = {}
+
+def search(self, cr, uid, args, offset=0, limit=None, order=None, context=None, count=False):
+_logger = logging.getLogger(__name__)
+_logger.error("search args:%s, offset=%s limit=%s context:%s order=%s"%(
+args,
+offset,
+limit,
+context,
+order), exc_info=True)
+
+_search_context = {}
+date_start = '2010-01-01'
+date_end = '2100-12-31'
+
+for arg in args:
+if arg[0] == 'date_start':
+self._search_context['date_start'] = arg[2]
+if arg[0] == 'date_end':
+self._search_context['date_end'] = arg[2]
+if arg[0] == 'product_id':
+self._search_context['id']
+
+
+whereSql = ' where true'
+if self._search_context.get('date_start'):
+date_start = self._search_context.get('date_start')
+whereSql = whereSql + " and i.date >= '%s'"%(date_start)
+
+if self._search_context.get('date_end'):
+date_end = self._search_context.get('date_end')
+whereSql = whereSql + (" and i.date <= '%s'"%(date_end))
+
+
+groupSql = ' group by product_id'
+orderSql = ''
+offsetSql = ''
+limitSql = ''
+
+if order:
+orderSql = 'order by %s'%(order)
+
+if offset > 0:
+offsetSql = ' offset %d'%offset
+if limit:
+limitSql = ' limit %d'%limit
+
+selectSql = """select product_id as id, product_id, '%s' as date_start, '%s' as date_end, sum(l.quantity) as quantity_totle, sum(l.quantity * l.price_sale) as price_totle, sum(l.quantity * (l.price_sale - p.price_buy)) as profits from xinquanda_product_customer_in_list as l join xinquanda_product as p on l.product_id = p.id join xinquanda_product_customer_in as i on l.in_id = i.id %s %s %s %s %s"""%(date_start, date_end, whereSql, groupSql, orderSql, offsetSql, limitSql)
+
+_logger.error("search selectSql=%s"%(
+selectSql), exc_info=True)
+
+cr.execute(selectSql)
+records = cr.fetchall()
+
+result = []
+for record in records:
+result.append(record[0])
+
+return result
+
+def read(self, cr, user, ids, fields=None, context=None, load='_classic_read'):
+_logger = logging.getLogger(__name__)
+_logger.error("read ids:%s, fields:%s context:%s load=%s self._search_context=%s"%(
+ids,
+fields,
+context,
+load,
+self._search_context), exc_info=True)
+
+date_start = '2010-01-01'
+date_end = '2100-12-31'
+
+whereSql = ' where true'
+if self._search_context.get('date_start'):
+date_start = self._search_context.get('date_start')
+whereSql = whereSql + " and i.date >= '%s'"%(date_start)
+
+if self._search_context.get('date_end'):
+date_end = self._search_context.get('date_end')
+whereSql = whereSql + (" and i.date <= '%s'"%(date_end))
+
+if isinstance(ids, (int, long)):
+ids = (ids,)
+if isinstance(ids, tuple):
+ids = list(ids,)
+
+
+if len(ids) > 0:
+temp = '%s'%(ids)
+temp = temp.replace('[', '(', 1)
+temp = temp.replace(']', ')', 1)
+whereSql = whereSql + ' and product_id in ' + temp
+
+groupSql = ' group by product_id;'
+
+
+selectSql = """select product_id as id, product_id, '%s' as date_start, '%s' as date_end, sum(l.quantity) as quantity_totle, sum(l.quantity * l.price_sale) as price_totle, sum(l.quantity * (l.price_sale - p.price_buy)) as profits from xinquanda_product_customer_in_list as l join xinquanda_product as p on l.product_id = p.id join xinquanda_product_customer_in as i on l.in_id = i.id %s %s"""%(date_start, date_end, whereSql, groupSql)
+
+_logger.error("read selectSql=%s"%(
+selectSql), exc_info=True)
+
+cr.execute(selectSql)
+result = cr.fetchall()
+
+
+#把result转化为record要求的dict格式
+colum_field = ['id', 'product_id', 'date_start', 'date_end', 'quantity_totle', 'price_totle', 'profits']
+read_result = []
+for record in result:
+read_record = {}
+index = 0
+while index < len(colum_field):
+read_record[colum_field[index]] = record[index]
+index = index + 1
+read_result.append(read_record)
+
+
+#清空search
+self._search_context = {}
+
+return read_result
+
+_columns = {
+'product_id' : fields.many2one('xinquanda.product', '货物', readonly=True, select=True),
+'date_start': fields.date('起始日期', readonly=True, required=True),
+'date_end': fields.date('结束日期', readonly=True, required=True),
+'quantity_totle' : fields.integer('销售总量', readonly=True, select=True),
+'price_totle' : fields.float('销售总额', readonly=True),
+'profits' : fields.float('利润', readonly=True),
+ }
+
+xinquanda_statistics_product_period()#对象定义结束
+
+
+22. 权限分配可以开启技术菜单。通过配置组的权限来实现
+
+
+23. 设置表格默认列数。在action的xml里面增加<field name="limit">lines number</field>
+
+
+
+24.设置表格默认顺序。在py定义里面增加 _order = 'field name [desc]'

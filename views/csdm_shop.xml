@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data>
+        <record id="view_csdm_shop" model="ir.ui.view">
+                    <field name="name">shoptree</field>
+                    <field name="model">shop.base</field>
+                    <field name="priority">2</field>
+                    <field name="arch" type="xml">
+                        <tree string="sp" >
+                            <field name="name" string="Order Number"/>
+                            <field name="code"/>
+                        </tree>
+                    </field>
+        </record>
+
+        <record id="action_shop" model="ir.actions.act_window">
+            <field name="name">商铺</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">shop.base</field>
+            <field name="view_type">form</field>
+            <field name="view_mode">tree,form</field>
+        </record>
+
+       <menuitem   id="mjw_csdm"
+                   name ="商业管理系统"
+                   sequence="6" />
+       <menuitem   id="mjw_csdm_shop"
+                   name ="铺位管理"
+                   parent="mjw_csdm"
+                   sequence="6" />
+       <menuitem   action="action_shop"
+                   id="mjw_csdm_shopadd"
+                   name ="商铺管理"
+                   parent="mjw_csdm_shop"
+                   sequence="6" />
+       <menuitem   action="action_shop"
+                   id="mjw_csdm_ggw"
+                   name ="广告位管理"
+                   parent="mjw_csdm_shop"
+                   sequence="6" />
+       <menuitem   action="action_shop"
+                   id="mjw_csdm_cdgl"
+                   name ="场地管理"
+                   parent="mjw_csdm_shop"
+                   sequence="6" />
+       <menuitem   action="action_shop"
+                   id="mjw_csdm_shopbg"
+                   name ="商铺信息变更"
+                   parent="mjw_csdm_shop"
+                   sequence="6" />
+       <menuitem   action="action_shop"
+                   id="mjw_csdm_ggcdbg"
+                   name ="广告位场地信息变更"
+                   parent="mjw_csdm_shop"
+                   sequence="6" />
+       <menuitem   action="action_shop"
+                   id="mjw_csdm_shopcfhb"
+                   name ="商铺拆分与合并"
+                   parent="mjw_csdm_shop"
+                   sequence="6" />
+       <menuitem   action="action_shop"
+                   id="mjw_csdm_spxx"
+                   name ="商铺信息综合查询"
+                   parent="mjw_csdm_shop"
+                   sequence="6" />
+       <menuitem   action="action_shop"
+                   id="mjw_csdm_spczxx"
+                   name ="商铺出租信息查询"
+                   parent="mjw_csdm_shop"
+                   sequence="6" />
+       <menuitem   id="mjw_csdm_kh"
+                   name ="客户信息管理"
+                   parent="mjw_csdm"
+                   sequence="6" />
+       <menuitem   action="action_shop"
+                   id="mjw_csdm_khxx"
+                   name ="客户信息维护"
+                   parent="mjw_csdm_kh"
+                   sequence="6" />
+       <menuitem   id="mjw_csdm_ht"
+                   name ="合同管理"
+                   parent="mjw_csdm"
+                   sequence="6" />
+       <menuitem   action="action_shop"
+                   id="mjw_csdm_htxx"
+                   name ="客户合同维护"
+                   parent="mjw_csdm_ht"
+                   sequence="6" />
+       <menuitem   action="action_shop"
+                   id="mjw_csdm_htbg"
+                   name ="客户合同变更"
+                   parent="mjw_csdm_ht"
+                   sequence="6" />
+       <menuitem   action="action_shop"
+                   id="mjw_csdm_htmb"
+                   name ="合同模板维护"
+                   parent="mjw_csdm_ht"
+                   sequence="6" />
+       <menuitem   id="mjw_csdm_jy"
+                   name ="日常管理"
+                   parent="mjw_csdm"
+                   sequence="6" />
+       <menuitem   action="action_shop"
+                   id="mjw_csdm_htbr"
+                   name ="营业额后台补录入"
+                   parent="mjw_csdm_jy"
+                   sequence="6" />
+       <menuitem   action="action_shop"
+                   id="mjw_csdm_sdfdr"
+                   name ="水电费导入"
+                   parent="mjw_csdm_jy"
+                   sequence="6" />
+       <menuitem   action="action_shop"
+                   id="mjw_csdm_zjzd"
+                   name ="租金等通知单"
+                   parent="mjw_csdm_jy"
+                   sequence="6" />
+       <menuitem   action="action_shop"
+                   id="mjw_csdm_sdfzd"
+                   name ="水电费通知单"
+                   parent="mjw_csdm_jy"
+                   sequence="6" />
+       <menuitem   id="mjw_csdm_pos"
+                   name ="POS端销售管理"
+                   parent="mjw_csdm"
+                   sequence="6" />
+       <menuitem   id="mjw_csdm_sp"
+                   name ="商品管理"
+                   parent="mjw_csdm"
+                   sequence="6" />
+       <menuitem   id="mjw_csdm_yx"
+                   name ="营销管理"
+                   parent="mjw_csdm"
+                   sequence="6" />
+       <menuitem   id="mjw_csdm_gk"
+                   name ="顾客信息管理"
+                   parent="mjw_csdm"
+                   sequence="6" />
+
+    </data>
+</openerp>
